@@ -38,7 +38,22 @@ abstract public class OutputStream {
     }
 
     public void writeVInt(int i) throws IOException{
-        
+        while((i & ~0x7f) != 0){
+            writeByte( (byte)((i & 0x7f) | 0x80) );
+        }
+        writeByte((byte)i);
+    }
+
+    public void writeChars(char[] chars) throws IOException{
+        for(int i = 0; i < chars.length; i ++){
+            writeByte((byte)chars[i]);
+            writeByte((byte)(chars[i] >>> 8));
+        }
+    }
+
+    public void writeString(String str) throws IOException{
+        writeVInt(str.length());
+        writeChars(str.toCharArray());
     }
 
     public void flush() throws IOException {
