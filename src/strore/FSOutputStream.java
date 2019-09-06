@@ -1,7 +1,6 @@
 package strore;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -9,7 +8,7 @@ public class FSOutputStream extends OutputStream{
 
     private FileOutputStream fileOutputStream;
 
-    public FSOutputStream(File file) throws FileNotFoundException {
+    public FSOutputStream(File file) throws IOException {
         fileOutputStream = new FileOutputStream(file);
     }
 
