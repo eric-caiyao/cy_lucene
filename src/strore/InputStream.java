@@ -20,4 +20,20 @@ abstract public class InputStream {
         }while ((b & ~0x80) != 0);
         return i;
     }
+
+    public char readChar() throws IOException{
+        char c;
+        c = (char)readByte();
+        c = (char)(readByte() << 8 | c);
+        return c;
+    }
+
+    public String readString() throws IOException{
+        int length = readVInt();
+        char[] charArray = new char[length];
+        for(int i = 0; i < length; i ++){
+            charArray[i] = readChar();
+        }
+        return new String(charArray);
+    }
 }

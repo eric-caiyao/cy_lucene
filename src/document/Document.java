@@ -8,10 +8,14 @@ import java.util.List;
  */
 public class Document {
 
-    List<Field> fields = new ArrayList<Field>();
+    private List<Field> fields = new ArrayList<Field>();
 
     public Document addField(Field field){
         fields.add(field);
         return this;
+    }
+
+    public List<Field> fields(){
+        return fields;
     }
 }

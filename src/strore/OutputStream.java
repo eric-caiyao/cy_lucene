@@ -6,7 +6,7 @@ abstract public class OutputStream {
     /**
      * 缓存大小
      */
-    private final int BUFFER_SIZE = 1024;
+    private final int BUFFER_SIZE = 1;
     /**
      * 写缓存
      */
@@ -18,11 +18,11 @@ abstract public class OutputStream {
     /**
      * 缓存的文件数据开始位置
      */
-    private int fileStartInBuffer = 0;
+    private long fileStartInBuffer = 0;
     /**
      * 文件指针
      */
-    private int filePosition;
+    private long filePosition;
 
     public OutputStream(){
         filePosition = 0;
@@ -35,6 +35,38 @@ abstract public class OutputStream {
         }
         buffer[bufferPosition++] = b;
         filePosition++;
+    }
+
+    public void writeLong(long l) throws IOException{
+        writeByte((byte) l);
+
+        l = l >>> 8;
+        writeByte((byte) l);
+
+        l = l >>> 8;
+        writeByte((byte) l);
+
+        l = l >>> 8;
+        writeByte((byte) l);
+
+        l = l >>> 8;
+        writeByte((byte) l);
+
+        l = l >>> 8;
+        writeByte((byte) l);
+
+        l = l >>> 8;
+        writeByte((byte) l);
+
+        l = l >>> 8;
+        writeByte((byte) l);
+    }
+
+    public void writeVLong(long l)throws IOException{
+        while((l & ~0x7f) != 0){
+            writeByte( (byte)((l & 0x7f) | 0x80) );
+        }
+        writeByte((byte)l);
     }
 
     public void writeVInt(int i) throws IOException{
@@ -60,6 +92,10 @@ abstract public class OutputStream {
         flushBuffer();
         fileStartInBuffer = filePosition;
         bufferPosition = 0;
+    }
+
+    public long getFilePosition() {
+        return filePosition;
     }
 
     public abstract void flushBuffer() throws IOException;
