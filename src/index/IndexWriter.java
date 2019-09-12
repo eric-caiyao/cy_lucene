@@ -5,6 +5,7 @@ import document.Field;
 import strore.Directory;
 import strore.FSDirectory;
 import strore.OutputStream;
+import strore.RAMDirectory;
 import utils.StringUtils;
 
 import java.io.File;
@@ -14,15 +15,22 @@ import java.util.*;
 public class IndexWriter {
     public static final int INDEX_INTERVAL = 10;
     private Directory directory;
+    private Directory ramDirectory = new RAMDirectory();
+    private SegmentInfos segmentInfos = new SegmentInfos();
     public IndexWriter(String path) throws IOException {
         File indexDirectory = new File(path);
         if(!indexDirectory.exists()){
             indexDirectory.createNewFile();
         }
         directory = new FSDirectory(indexDirectory);
+        segmentInfos.read(directory);
     }
 
+    private String newSegmentName(){
+        return "_" + (segmentInfos.getSegmentCount() + 1);
+    }
     public void addDocument(Document doc) throws IOException {
+        String segmentName = newSegmentName();
         /*
          * 写属性名称
          */
@@ -31,7 +39,7 @@ public class IndexWriter {
         for(int i = 0; i < fields.size(); i ++){
             nameToId.put(fields.get(i).getName(),i);
         }
-        OutputStream fnmStream = directory.createFile("index.fnm");
+        OutputStream fnmStream = ramDirectory.createFile(segmentName + ".fnm");
         fnmStream.writeVInt(nameToId.size());
         for(Field field : fields){
             fnmStream.writeString(field.getName());
@@ -39,8 +47,8 @@ public class IndexWriter {
         /*
          * 写文档数据
          */
-        OutputStream fdtStream = directory.createFile("index.fdt");
-        OutputStream fdxStream = directory.createFile("index.fdx");
+        OutputStream fdtStream = ramDirectory.createFile(segmentName + ".fdt");
+        OutputStream fdxStream = ramDirectory.createFile(segmentName + ".fdx");
         fdxStream.writeLong(fdtStream.getFilePosition());
         fdtStream.writeVInt(fields.size());
         for(Field field : fields){
@@ -70,10 +78,10 @@ public class IndexWriter {
                 }
             }
         }
-        OutputStream tisStream = directory.createFile("index.tis");
-        OutputStream tiiStream = directory.createFile("index.tii");
-        OutputStream freqStream = directory.createFile("index.frq");
-        OutputStream proxStream = directory.createFile("index.prox");
+        OutputStream tisStream = ramDirectory.createFile(segmentName + ".tis");
+        OutputStream tiiStream = ramDirectory.createFile(segmentName + ".tii");
+        OutputStream freqStream = ramDirectory.createFile(segmentName + ".frq");
+        OutputStream proxStream = ramDirectory.createFile(segmentName + ".prox");
         tisStream.writeVInt(termDocMap.size());// term size
         tisStream.writeVInt(INDEX_INTERVAL); // indexInterval
         tiiStream.writeVInt(termDocMap.size() / INDEX_INTERVAL); // index term size
@@ -111,6 +119,55 @@ public class IndexWriter {
             for(Integer prox : termDoc.getValue()){
                 proxStream.writeVInt(prox);
             }
+        }
+        segmentInfos.add(new Segment(segmentName,1,ramDirectory));
+
+        int minMergeDocs = 10;
+        int maxMergeDocs = 10000;
+        int currentMergeDocs = minMergeDocs;
+        while(currentMergeDocs <= maxMergeDocs){
+            int minSegment = segmentInfos.getSegmentCount();
+            int mergeDocs = 0;
+            while(-- minSegment >= 0){
+                Segment segment = segmentInfos.getSegmentList().get(minSegment);
+                if(segment.getDocCount() >= currentMergeDocs){
+                    break;
+                }
+                mergeDocs += segment.getDocCount();
+            }
+            if(mergeDocs >= currentMergeDocs){
+                int mergeMinSegment = minSegment + 1;
+                String newSegmentName = "_" + (segmentInfos.getSegmentCount() + 1);
+                //  合并属性
+                FieldNames newFieldNames = new FieldNames(directory, newSegmentName);
+                while (mergeMinSegment++ <= segmentInfos.getSegmentList().size()) {
+                    Segment tmpSegment = segmentInfos.getSegmentList().get(mergeMinSegment);
+                    FieldNames tmpFieldNames = new FieldNames(
+                            tmpSegment.getDirectory(),
+                            tmpSegment.getSegmentName()
+                    );
+                    newFieldNames.addFieldNames(tmpFieldNames.fieldNames());
+                }
+                newFieldNames.write();
+                //  合并数据
+                mergeMinSegment = minSegment + 1; // 重置mergeMinSegment
+                FieldValues newFieldValues = new FieldValues(directory,newSegmentName);
+                while(mergeMinSegment ++ <= segmentInfos.getSegmentList().size()){
+                    Segment tmpSegment = segmentInfos.getSegmentList().get(mergeMinSegment);
+                    FieldValues tmpFieldValues = new FieldValues(directory,tmpSegment.getSegmentName());
+                    for(int i = 0;i < tmpSegment.getDocCount(); i ++){
+                        newFieldValues.addDocument(tmpFieldValues.doucument(i));
+                    }
+                }
+                //  合并词元
+
+                //  合并频率数据 词元里合并以后文档id如何计算出来？
+                //  合并位置数据
+
+            }else {
+                break;
+            }
+            currentMergeDocs *= 10;
         }
     }
 }
