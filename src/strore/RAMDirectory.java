@@ -15,4 +15,12 @@ public class RAMDirectory implements Directory{
         files.put(fileName,new ArrayList<>());
         return new RAMOutputStream(files.get(fileName));
     }
+
+    @Override
+    public InputStream openFile(String fileName) throws IOException {
+        /**
+         * todo:
+         */
+        return null;
+    }
 }

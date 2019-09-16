@@ -39,7 +39,7 @@ public class IndexWriter {
         for(int i = 0; i < fields.size(); i ++){
             nameToId.put(fields.get(i).getName(),i);
         }
-        OutputStream fnmStream = ramDirectory.createFile(segmentName + ".fnm");
+        OutputStream fnmStream = directory.createFile(segmentName + ".fnm");
         fnmStream.writeVInt(nameToId.size());
         for(Field field : fields){
             fnmStream.writeString(field.getName());
@@ -47,8 +47,8 @@ public class IndexWriter {
         /*
          * 写文档数据
          */
-        OutputStream fdtStream = ramDirectory.createFile(segmentName + ".fdt");
-        OutputStream fdxStream = ramDirectory.createFile(segmentName + ".fdx");
+        OutputStream fdtStream = directory.createFile(segmentName + ".fdt");
+        OutputStream fdxStream = directory.createFile(segmentName + ".fdx");
         fdxStream.writeLong(fdtStream.getFilePosition());
         fdtStream.writeVInt(fields.size());
         for(Field field : fields){
@@ -71,17 +71,16 @@ public class IndexWriter {
             while(tokenizer.hasNext()){
                 Token tmpToken = tokenizer.nextToken();
                 Term tmpTerm = new Term(field.getName(),tmpToken.getValue());
-                if(termDocMap.containsKey(tmpTerm)){
-                    termDocMap.get(tmpTerm).add(tmpToken.getPosition());
-                }else{
-                    termDocMap.put(tmpTerm,Arrays.asList(tmpToken.getPosition()));
+                if(!termDocMap.containsKey(tmpTerm)){
+                    termDocMap.put(tmpTerm,new ArrayList<>());
                 }
+                termDocMap.get(tmpTerm).add(tmpToken.getPosition());
             }
         }
-        OutputStream tisStream = ramDirectory.createFile(segmentName + ".tis");
-        OutputStream tiiStream = ramDirectory.createFile(segmentName + ".tii");
-        OutputStream freqStream = ramDirectory.createFile(segmentName + ".frq");
-        OutputStream proxStream = ramDirectory.createFile(segmentName + ".prox");
+        OutputStream tisStream = directory.createFile(segmentName + ".tis");
+        OutputStream tiiStream = directory.createFile(segmentName + ".tii");
+        OutputStream freqStream = directory.createFile(segmentName + ".frq");
+        OutputStream proxStream = directory.createFile(segmentName + ".prox");
         tisStream.writeVInt(termDocMap.size());// term size
         tisStream.writeVInt(INDEX_INTERVAL); // indexInterval
         tiiStream.writeVInt(termDocMap.size() / INDEX_INTERVAL); // index term size
@@ -95,6 +94,7 @@ public class IndexWriter {
                 tiiStream.writeVInt(sharePrefixLength); // 共享前缀长度
                 tiiStream.writeString(term.getTermValue().substring(sharePrefixLength, term.getTermValue().length() - 1)); // 后缀
                 tiiStream.writeVInt(nameToId.get(term.getFieldName())); // 属性编号
+                tiiStream.writeVInt(1); // 文档数
                 tiiStream.writeVLong(tisStream.getFilePosition()); // 该term在词元文件中的位置
                 tiiStream.writeVLong(freqStream.getFilePosition()); // 频率文件位置
                 tiiStream.writeLong(proxStream.getFilePosition()); // 位置文件位置
@@ -102,10 +102,11 @@ public class IndexWriter {
             }
             int sharePrefixLength = StringUtils.sharePrefixLength(tmpTermValue,term.getTermValue());
             tisStream.writeVInt(sharePrefixLength); // 共享前缀长度
-            tisStream.writeString(term.getTermValue().substring(sharePrefixLength,term.getTermValue().length() - 1)); // 后缀
+            tisStream.writeString(term.getTermValue().substring(sharePrefixLength,term.getTermValue().length())); // 后缀
             tisStream.writeVInt(nameToId.get(term.getFieldName()));// 属性编号
-            tisStream.writeVLong(freqStream.getFilePosition()); // 频率文件位置
-            tisStream.writeLong(proxStream.getFilePosition()); // 位置文件位置
+            tisStream.writeVInt(1); // 文档数
+            tisStream.writeVInt((int)freqStream.getFilePosition()); // 频率文件位置
+            tisStream.writeVInt((int)proxStream.getFilePosition()); // 位置文件位置
             tmpTermValue = term.getTermValue();
 
             // 写频率数据
@@ -120,8 +121,8 @@ public class IndexWriter {
                 proxStream.writeVInt(prox);
             }
         }
-        segmentInfos.add(new Segment(segmentName,1,ramDirectory));
-
+        segmentInfos.add(new Segment(segmentName,1,directory));
+        /*
         int minMergeDocs = 10;
         int maxMergeDocs = 10000;
         int currentMergeDocs = minMergeDocs;
@@ -163,11 +164,11 @@ public class IndexWriter {
 
                 //  合并频率数据 词元里合并以后文档id如何计算出来？
                 //  合并位置数据
-
             }else {
                 break;
             }
             currentMergeDocs *= 10;
         }
+        */
     }
 }

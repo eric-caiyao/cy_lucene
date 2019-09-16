@@ -6,18 +6,22 @@ abstract public class InputStream {
 
     abstract public byte readByte() throws IOException;
 
+    public long readVLong() throws IOException{
+        return (long)readVInt();
+    }
+
     public int readVInt() throws IOException{
         int i = 0;
         byte b;
         b = readByte();
         i = i | b;
-        if((b & ~0x80) == 0){
+        if((b & 0x80) == 0){
             return i;
         }
         do{
             b = readByte();
             i = i | (b << 7);
-        }while ((b & ~0x80) != 0);
+        }while ((b & 0x80) != 0);
         return i;
     }
 
@@ -36,4 +40,6 @@ abstract public class InputStream {
         }
         return new String(charArray);
     }
+
+    abstract public void seek(long streamPointer) throws IOException;
 }
