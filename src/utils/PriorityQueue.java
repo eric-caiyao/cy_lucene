@@ -3,7 +3,6 @@ package utils;
 abstract public class PriorityQueue<T>{
     private T[] array;
     private int nextIndex = 0;
-
     public PriorityQueue(int size){
         array = (T[]) new Object[size];
     }
@@ -29,8 +28,11 @@ abstract public class PriorityQueue<T>{
         T tmpItem;
         int currentIndex = 0;
         while(
-                lessThan(array[currentIndex * 2 + 1],array[currentIndex])
-                || lessThan(array[currentIndex * 2 + 2],array[currentIndex])
+                currentIndex * 2 + 1 < nextIndex
+                && (
+                   lessThan(array[currentIndex * 2 + 1],array[currentIndex])
+                   || lessThan(array[currentIndex * 2 + 2],array[currentIndex])
+                )
         ){
             tmpItem = array[currentIndex];
             if(lessThan(array[currentIndex * 2 + 1],array[currentIndex * 2 + 2])){
@@ -48,7 +50,7 @@ abstract public class PriorityQueue<T>{
     private void up(){
         T tmpItem;
         int currentIndex = nextIndex - 1;
-        while(lessThan(array[currentIndex],array[(currentIndex - 1) / 2])){
+        while(currentIndex >= 0 && lessThan(array[currentIndex],array[(currentIndex - 1) / 2])){
             tmpItem = array[currentIndex];
             array[currentIndex] = array[(currentIndex - 1) / 2];
             array[(currentIndex - 1) / 2] = tmpItem;
