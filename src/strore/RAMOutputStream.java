@@ -17,4 +17,11 @@ public class RAMOutputStream extends OutputStream{
             fileContent.add(buffer[i]);
         }
     }
+
+    @Override
+    public void close() throws IOException {
+        /**
+         * todo:
+         */
+    }
 }

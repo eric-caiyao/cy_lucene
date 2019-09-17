@@ -98,5 +98,13 @@ abstract public class OutputStream {
         return filePosition;
     }
 
-    public abstract void flushBuffer() throws IOException;
+   abstract public void flushBuffer() throws IOException;
+
+    public void internalClose() throws IOException {
+        flush();
+        close();
+    }
+    abstract public void close() throws IOException;
+
+    abstract public void seek(long position) throws IOException;
 }

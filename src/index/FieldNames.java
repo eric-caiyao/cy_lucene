@@ -1,6 +1,9 @@
 package index;
 
+import document.Document;
+import document.Field;
 import strore.Directory;
+import strore.InputStream;
 import strore.OutputStream;
 
 import java.io.IOException;
@@ -13,19 +16,25 @@ public class FieldNames {
 
     private Map<String,Integer> nameToNoMap = new HashMap<>();
 
-    OutputStream outputStream;
+    public FieldNames(){
 
-    public FieldNames(Directory directory,String segmentName) throws IOException {
-        /**
-         * todo: 从文件中将属性信息加载到nameToNoMap
-         */
-        outputStream = directory.createFile(segmentName);
     }
 
-    public void write(){
-        /**
-         * 将nameToNoMap中的数据写入到outputStream指定的数据中
-         */
+    public FieldNames(Directory directory,String segmentName) throws IOException {
+        InputStream inputStream = directory.openFile(segmentName + ".fnm");
+        int fieldCount = inputStream.readVInt(); // field count
+        for(int i = 0; i < fieldCount; i ++){
+            addFieldName(inputStream.readString());
+        }
+    }
+
+    public void write(Directory directory, String segmentName) throws IOException {
+        OutputStream outputStream = directory.createFile(segmentName + ".fnm");
+        outputStream.writeVInt(nameToNoMap.size());
+        for(Map.Entry<String, Integer> field : nameToNoMap.entrySet()){
+            outputStream.writeString(field.getKey());
+        }
+        outputStream.close();
     }
 
     public void addFieldName(String fieldName){
@@ -42,6 +51,24 @@ public class FieldNames {
     public void addFieldNames(List<String> fieldNames){
         for(String fieldName : fieldNames){
             addFieldName(fieldName);
+        }
+    }
+
+    public Integer id(String name){
+        return nameToNoMap.get(name);
+    }
+
+    public String name(int fieldNum) {
+        Map<Integer,String> inverseMap = new HashMap<>();
+        for(Map.Entry<String, Integer> entry : nameToNoMap.entrySet()){
+            inverseMap.put(entry.getValue(),entry.getKey());
+        }
+        return inverseMap.get(fieldNum);
+    }
+
+    public void addDocument(Document document){
+        for(Field field : document.fields()){
+            addFieldName(field.getName());
         }
     }
 }

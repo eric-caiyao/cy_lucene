@@ -1,19 +1,19 @@
 package utils;
 
-import index.TermEnum;
+import index.MergeIndex;
 
-public class MergeIndexQueue extends PriorityQueue<TermEnum> {
+public class MergeIndexQueue extends PriorityQueue<MergeIndex> {
 
     public MergeIndexQueue(int size) {
         super(size);
     }
 
     @Override
-    public boolean lessThan(TermEnum left, TermEnum right) {
-        if(left.getTerm().getFieldName().equalsIgnoreCase(right.getTerm().getFieldName())){
-            return left.getTerm().getTermValue().compareTo(right.getTerm().getTermValue()) < 0;
+    public boolean lessThan(MergeIndex left, MergeIndex right) {
+        if(left.getTermEnum().getTerm().getFieldName().equalsIgnoreCase(right.getTermEnum().getTerm().getFieldName())){
+            return left.getTermEnum().getTerm().getTermValue().compareTo(right.getTermEnum().getTerm().getTermValue()) < 0;
         }else{
-            return left.getTerm().getFieldName().compareTo(right.getTerm().getFieldName()) < 0;
+            return left.getTermEnum().getTerm().getFieldName().compareTo(right.getTermEnum().getTerm().getFieldName()) < 0;
         }
     }
 }

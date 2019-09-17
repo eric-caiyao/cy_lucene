@@ -7,6 +7,9 @@ abstract public class PriorityQueue<T>{
         array = (T[]) new Object[size];
     }
 
+    public int size(){
+        return nextIndex;
+    }
     public T pop(){
         T top = array[0];
         array[0] = array[nextIndex - 1];
