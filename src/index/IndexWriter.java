@@ -47,7 +47,7 @@ public class IndexWriter {
         * 写词元字典
          */
         List<TermPositions> termPositions = termPositions(doc);
-        TermInfosWriter termInfosWriter = new TermInfosWriter(directory,segmentName,termPositions.size());
+        TermInfosWriter termInfosWriter = new TermInfosWriter(directory,segmentName,newFieldNames);
         OutputStream frqOutputStream = directory.createFile(segmentName + ".frq");
         OutputStream proxOutputStream = directory.createFile(segmentName + ".prox");
 
